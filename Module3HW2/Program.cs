@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using Module3HW2.Models;
-using Module3HW2.Configurations;
 using Module3HW2.Services;
-using Newtonsoft.Json;
 
 namespace Module3HW2
 {
