@@ -1,24 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Globalization;
 using Module3HW2.Models;
+using Module3HW2.Services;
+using Module3HW2.Configurations;
 
 namespace Module3HW2
 {
-    public class ContactCollection
+    public class ContactCollection : IEnumerable<KeyValuePair<char, SortedSet<Contact>>>
     {
+        private readonly Config _config;
         private SortedSet<KeyValuePair<char, SortedSet<Contact>>> _groupedContacts;
         private Dictionary<string, string> _cultures;
-        private string _currentCulture = CultureInfo.InvariantCulture.Name;
+        private ContactComparer _contactComparer;
+        private string _currentCulture;
+        private string _pattern;
 
-        public ContactCollection()
+        public ContactCollection(Config config)
         {
-            _cultures = new Dictionary<string, string>();
-            _currentCulture = CultureInfo.InvariantCulture.Name;
-            _groupedContacts = new SortedSet<KeyValuePair<char, SortedSet<Contact>>>(new GroupsComparer(GetPattern()));
+            _config = config;
+            Init();
+        }
+
+        public int GroupCount { get => _groupedContacts.Count; }
+
+        public int ContactCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var keyValuePair in _groupedContacts)
+                {
+                    count += keyValuePair.Value.Count;
+                }
+
+                return count;
+            }
         }
 
         public void Add(Contact contact)
@@ -26,53 +47,132 @@ namespace Module3HW2
             var isFind = false;
             var group = char.ToLower(contact.FullName[0]);
 
-            if (GetPattern().IndexOf(group) == -1)
+            if (_pattern.IndexOf(group) == -1)
             {
-                foreach (var keyValue in _groupedContacts)
-                {
-                    if (keyValue.Key.Equals('#'))
-                    {
-                        keyValue.Value.Add(contact);
-                        isFind = true;
-                        break;
-                    }
-                }
+                group = '#';
+            }
 
-                if (!isFind)
+            foreach (var keyValuePair in _groupedContacts)
+            {
+                if (keyValuePair.Key.Equals(group))
                 {
-                    var contacts = new SortedSet<Contact>(new ContactComparer(new CultureInfo(_currentCulture))) { contact };
-                    _groupedContacts.Add(new KeyValuePair<char, SortedSet<Contact>>('#', contacts));
+                    keyValuePair.Value.Add(contact);
+                    isFind = true;
+                    break;
                 }
             }
-            else
+
+            if (!isFind)
             {
-                foreach (var keyValue in _groupedContacts)
+                var contacts = new SortedSet<Contact>(_contactComparer) { contact };
+                _groupedContacts.Add(new KeyValuePair<char, SortedSet<Contact>>(group, contacts));
+            }
+        }
+
+        public bool RemoveGroup(char group)
+        {
+            foreach (var keyValuePair in _groupedContacts)
+            {
+                if (Equals(keyValuePair.Key, group))
                 {
-                    if (group.Equals(keyValue.Key))
+                    _groupedContacts.Remove(keyValuePair);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool RemoveContact(Contact contact)
+        {
+            foreach (var keyValuePair in _groupedContacts)
+            {
+                foreach (var item in keyValuePair.Value)
+                {
+                    if (Equals(item, contact))
                     {
-                        keyValue.Value.Add(contact);
-                        isFind = true;
+                        keyValuePair.Value.Remove(item);
+                        if (keyValuePair.Value.Count == 0)
+                        {
+                            _groupedContacts.Remove(keyValuePair);
+                        }
+
+                        return true;
                     }
                 }
+            }
 
-                if (!isFind)
+            return false;
+        }
+
+        public bool ChangeCulture(string culture)
+        {
+            if (string.Equals(_currentCulture, culture))
+            {
+                return false;
+            }
+
+            if (_cultures.ContainsKey(culture))
+            {
+                _currentCulture = culture;
+                Regroup();
+
+                return true;
+            }
+
+            return false;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public IEnumerator<KeyValuePair<char, SortedSet<Contact>>> GetEnumerator()
+        {
+            foreach (var keyValue in _groupedContacts)
+            {
+                yield return keyValue;
+            }
+        }
+
+        private void Init()
+        {
+            _cultures = _config.Cultures;
+            _currentCulture = _config.CurrentCulture;
+            _contactComparer = new ContactComparer(new CultureInfo(_currentCulture));
+            _pattern = GetPattern();
+            _groupedContacts = new SortedSet<KeyValuePair<char, SortedSet<Contact>>>(new GroupsComparer(_pattern));
+        }
+
+        private void Regroup()
+        {
+            var contacts = new List<Contact>();
+            foreach (var keyValuePair in _groupedContacts)
+            {
+                foreach (var contact in keyValuePair.Value)
                 {
-                    var contacts = new SortedSet<Contact>(new ContactComparer(new CultureInfo(_currentCulture))) { contact };
-                    _groupedContacts.Add(new KeyValuePair<char, SortedSet<Contact>>(group, contacts));
+                    contacts.Add(contact);
                 }
+            }
+
+            _pattern = GetPattern();
+            _groupedContacts = new SortedSet<KeyValuePair<char, SortedSet<Contact>>>(new GroupsComparer(_pattern));
+            _contactComparer = new ContactComparer(new CultureInfo(_currentCulture));
+
+            foreach (var contact in contacts)
+            {
+                Add(contact);
             }
         }
 
         private string GetPattern()
         {
-            var alphabet = "abcdefghiklmnopqrstvxyz";
+            var alphabet = "abcdefghijklmnopqrstvwxyz";
             var numbers = "0123456789";
-            if (_cultures.TryGetValue(_currentCulture, out alphabet))
-            {
-                return alphabet + numbers;
-            }
+            _cultures.TryGetValue(_currentCulture, out alphabet);
 
-            return alphabet + numbers;
+            return $"{alphabet}{numbers}";
         }
     }
 }

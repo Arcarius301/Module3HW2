@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using Module3HW2.Models;
+using Module3HW2.Configurations;
+using Module3HW2.Services;
+using Newtonsoft.Json;
 
 namespace Module3HW2
 {
@@ -9,25 +13,73 @@ namespace Module3HW2
     {
         public static void Main(string[] args)
         {
-            List<Contact> contacts = new List<Contact>()
+            var configurationService = new ConfigurationService();
+            ContactCollection contacts = new ContactCollection(configurationService.Config)
             {
-                new Contact() { FirstName = "ЪJett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "Ё2Jett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "5Jett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "6Jett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "1Jett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "0Jett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "AJett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "CJett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "BJett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
-                new Contact() { FirstName = "ЫJett", LastName = "Dickerson", PhoneNumber = "623-298-4464" },
+                new Contact() { FirstName = "AAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "0AJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "1GJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "00XJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "AAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "John", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "3CJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "5DJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ЫJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ЯBJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ФAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ЙЙAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ёAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "яAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "уAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "тAAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "AAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "0AAJohn", LastName = "Dillon", PhoneNumber = "380669999999" },
+                new Contact() { FirstName = "ZJohn", LastName = "Dillon", PhoneNumber = "380669999999" }
             };
 
-            contacts.Sort(new ContactComparer(CultureInfo.InvariantCulture));
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine($"Group count: {contacts.GroupCount}");
+            Console.WriteLine($"Contact count: {contacts.ContactCount}");
 
-            foreach (var contact in contacts)
+            foreach (var keyValuePair in contacts)
             {
-                Console.WriteLine(contact.FullName);
+                Console.WriteLine($"Group: {keyValuePair.Key}");
+                foreach (var contact in keyValuePair.Value)
+                {
+                    Console.WriteLine(contact.FullName);
+                }
+            }
+
+            contacts.ChangeCulture("ru_RU");
+            contacts.RemoveGroup('#');
+            contacts.RemoveContact(new Contact() { FirstName = "3CJohn", LastName = "Dillon", PhoneNumber = "380669999999" });
+
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine($"Group count: {contacts.GroupCount}");
+            Console.WriteLine($"Contact count: {contacts.ContactCount}");
+
+            foreach (var keyValuePair in contacts)
+            {
+                Console.WriteLine($"Group: {keyValuePair.Key}");
+                foreach (var contact in keyValuePair.Value)
+                {
+                    Console.WriteLine(contact.FullName);
+                }
+            }
+
+            contacts.ChangeCulture("en_US");
+
+            Console.WriteLine("----------------------------------------");
+            Console.WriteLine($"Group count: {contacts.GroupCount}");
+            Console.WriteLine($"Contact count: {contacts.ContactCount}");
+
+            foreach (var keyValuePair in contacts)
+            {
+                Console.WriteLine($"Group: {keyValuePair.Key}");
+                foreach (var contact in keyValuePair.Value)
+                {
+                    Console.WriteLine(contact.FullName);
+                }
             }
         }
     }
